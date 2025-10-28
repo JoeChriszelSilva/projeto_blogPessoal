@@ -1,45 +1,52 @@
-import { UsuarioService } from './../../usuario/service/usuario.service';
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { UsuarioService } from '../../usuario/service/usuario.service';
 import { Bcrypt } from '../bcrypt/bcrypt';
-import { usuarioLogin } from '../intities/usuariologin.entity';
+import { UsuarioLogin } from '../intities/usuariologin.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private usuarioService: UsuarioService,
+    private UsuarioService: UsuarioService,
     private jwtService: JwtService,
     private bcrypt: Bcrypt,
   ) {}
+
   async validateUser(username: string, password: string): Promise<any> {
-    const buscarUsuario = await this.usuarioService.findByUsuario(username);
-    if (!buscarUsuario) {
-      throw new HttpException('Usuário não encontrado!', HttpStatus.NOT_FOUND);
+    const buscaUsuario = await this.UsuarioService.findByUsuario(username);
+
+    if (!buscaUsuario) {
+      throw new HttpException('Usuário não encontrado', HttpStatus.NOT_FOUND);
     }
+
     const matchPassword = await this.bcrypt.compararSenhas(
       password,
-      buscarUsuario.senha,
+      buscaUsuario.senha,
     );
 
-    if (buscarUsuario && matchPassword) {
-      const { senha, ...resposta } = buscarUsuario;
+    if (buscaUsuario && matchPassword) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { senha, ...resposta } = buscaUsuario;
+      return resposta;
     }
 
     return null;
   }
 
-  async login(usuarioLogin: usuarioLogin) {
-    const payload = { username: usuarioLogin.usuario };
-    const buscarUsuario = await this.usuarioService.findByUsuario(
+  async login(usuarioLogin: UsuarioLogin) {
+    const payload = { sub: usuarioLogin.usuario };
+
+    const buscaUsuario = await this.UsuarioService.findByUsuario(
       usuarioLogin.usuario,
     );
+
     return {
-      id: buscarUsuario.id,
-      nome: buscarUsuario.nome,
-      usuario: buscarUsuario.usuario,
+      id: buscaUsuario?.id,
+      nome: buscaUsuario?.nome,
+      usuario: usuarioLogin.usuario,
       senha: '',
-      foto: buscarUsuario.foto,
-      token: `bearer ${this.jwtService.sign(payload)}`,
+      foto: buscaUsuario?.foto,
+      token: `Bearer ${this.jwtService.sign(payload)}`,
     };
   }
 }
