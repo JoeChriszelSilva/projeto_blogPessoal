@@ -13,6 +13,11 @@ export class ProdService implements TypeOrmOptionsFactory {
     return {
       type: 'postgres',
       url: this.configService.get<string>('DATABASE_URL'),
+      extra:{
+        ssl: {
+          rejectUnauthorized: false
+        }
+      }
       logging: false,
       dropSchema: false,
       entities: [Postagem, Tema, Usuario],
